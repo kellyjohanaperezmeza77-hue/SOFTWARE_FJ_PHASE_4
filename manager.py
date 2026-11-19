@@ -7,6 +7,7 @@ from exceptions import (
     ClientNotFoundError,
     ServiceNotFoundError,
     ReservationNotFoundError,
+    InvalidReservationError,
 )
 from logging_config import logger
 
@@ -37,13 +38,6 @@ class SoftwareFJManager:
             client = Client(name, normalized_email, phone)
             self.__clients.append(client)
 
-            logger.info(
-                "Client registered successfully: %s",
-                client.get_email()
-            )
-
-            return client
-
         except DuplicateClientError as error:
             logger.error("Client registration failed: %s", error)
             raise
@@ -51,6 +45,13 @@ class SoftwareFJManager:
         except (TypeError, ValueError) as error:
             logger.error("Invalid client information: %s", error)
             raise
+
+        else:
+            logger.info(
+                "Client registered successfully: %s",
+                client.get_email()
+            )
+            return client
 
     def find_client(self, email):
         try:
@@ -81,16 +82,16 @@ class SoftwareFJManager:
             service.validate_parameters()
             self.__services.append(service)
 
+        except (TypeError, ValueError) as error:
+            logger.error("Service registration failed: %s", error)
+            raise
+
+        else:
             logger.info(
                 "Service added successfully: %s",
                 service.get_name()
             )
-
             return service
-
-        except Exception as error:
-            logger.error("Service registration failed: %s", error)
-            raise
 
     def find_service(self, service_id):
         try:
@@ -118,10 +119,10 @@ class SoftwareFJManager:
         hours,
         discount=0
     ):
-        try:
-            client = self.find_client(client_email)
-            service = self.find_service(service_id)
+        client = self.find_client(client_email)
+        service = self.find_service(service_id)
 
+        try:
             reservation = Reservation(
                 client,
                 service,
@@ -131,23 +132,26 @@ class SoftwareFJManager:
 
             self.__reservations.append(reservation)
 
-            logger.info(
-                "Reservation created successfully: %s",
-                reservation.get_id()
-            )
-
-            return reservation
-
-        except Exception as error:
+        except InvalidReservationError as error:
             logger.error(
                 "Reservation creation failed: %s",
                 error
             )
             raise
 
+        else:
+            logger.info(
+                "Reservation created successfully: %s",
+                reservation.get_id()
+            )
+            return reservation
+
     def find_reservation(self, reservation_id):
         try:
-            if not isinstance(reservation_id, str) or not reservation_id.strip():
+            if (
+                not isinstance(reservation_id, str)
+                or not reservation_id.strip()
+            ):
                 raise ValueError("A valid reservation ID is required.")
 
             for reservation in self.__reservations:
@@ -163,42 +167,44 @@ class SoftwareFJManager:
             raise
 
     def confirm_reservation(self, reservation_id):
+        reservation = self.find_reservation(reservation_id)
+
         try:
-            reservation = self.find_reservation(reservation_id)
             result = reservation.confirm()
 
-            logger.info(
-                "Reservation confirmed: %s",
-                reservation_id
-            )
-
-            return result
-
-        except Exception as error:
+        except InvalidReservationError as error:
             logger.error(
                 "Reservation confirmation failed: %s",
                 error
             )
             raise
 
-    def cancel_reservation(self, reservation_id):
-        try:
-            reservation = self.find_reservation(reservation_id)
-            result = reservation.cancel()
-
+        else:
             logger.info(
-                "Reservation cancelled: %s",
+                "Reservation confirmed: %s",
                 reservation_id
             )
-
             return result
 
-        except Exception as error:
+    def cancel_reservation(self, reservation_id):
+        reservation = self.find_reservation(reservation_id)
+
+        try:
+            result = reservation.cancel()
+
+        except InvalidReservationError as error:
             logger.error(
                 "Reservation cancellation failed: %s",
                 error
             )
             raise
+
+        else:
+            logger.info(
+                "Reservation cancelled: %s",
+                reservation_id
+            )
+            return result
 
     # INFORMATION AND REPORTS
 
@@ -210,5 +216,3 @@ class SoftwareFJManager:
 
     def list_reservations(self):
         return list(self.__reservations)
-
-
