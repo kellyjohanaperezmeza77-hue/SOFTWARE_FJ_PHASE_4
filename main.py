@@ -377,43 +377,57 @@ def main():
     print("\nWelcome to Software FJ Management System!")
 
     while True:
-        display_menu()
-        option = input("Select an option: ")
+        try:
+            display_menu()
+            option = input("Select an option: ")
 
-        if option == "1":
-            register_client(manager)
+            if option == "1":
+                register_client(manager)
 
-        elif option == "2":
-            register_service(manager)
+            elif option == "2":
+                register_service(manager)
 
-        elif option == "3":
-            create_reservation(manager)
+            elif option == "3":
+                create_reservation(manager)
 
-        elif option == "4":
-            confirm_reservation(manager)
+            elif option == "4":
+                confirm_reservation(manager)
 
-        elif option == "5":
-            cancel_reservation(manager)
+            elif option == "5":
+                cancel_reservation(manager)
 
-        elif option == "6":
-            list_clients(manager)
+            elif option == "6":
+                list_clients(manager)
 
-        elif option == "7":
-            list_services(manager)
+            elif option == "7":
+                list_services(manager)
 
-        elif option == "8":
-            list_reservations(manager)
+            elif option == "8":
+                list_reservations(manager)
 
-        elif option == "9":
-            run_demonstration(manager)
+            elif option == "9":
+                run_demonstration(manager)
 
-        elif option == "0":
-            print("Thank you for using Software FJ.")
-            logger.info("Application closed.")
+            elif option == "0":
+                print("Thank you for using Software FJ.")
+                logger.info("Application closed.")
+                break
+
+            else:
+                print("Invalid option. Please try again.")
+
+        except (KeyboardInterrupt, EOFError):
+            print("\nApplication interrupted by the user.")
+            logger.warning("Application interrupted by the user.")
             break
 
-        else:
-            print("Invalid option. Please try again.")
+        except Exception as error:
+            logger.exception(
+                "Unexpected application error: %s",
+                error
+            )
+            print(f"An unexpected error occurred: {error}")
+            print("The application will continue running.")
 
 
 if __name__ == "__main__":

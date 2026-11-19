@@ -1,12 +1,12 @@
 
-from abc import abstractmethod
 import math
+from abc import abstractmethod
 
 from entities import Entity
 
 
 class Service(Entity):
-    """Abstract base class for services offered by Software FJ."""
+    """Abstract base class for all services."""
 
     def __init__(self, name, base_price):
         super().__init__()
@@ -42,6 +42,15 @@ class Service(Entity):
         self.__available = available
 
     def calculate_final_cost(self, hours, discount=0):
+        self._validate_hours(hours)
+        self._validate_discount(discount)
+
+        total = self.calculate_cost(hours)
+        final_cost = total - (total * discount / 100)
+
+        return final_cost
+
+    def _validate_hours(self, hours):
         if (
             not isinstance(hours, (int, float))
             or isinstance(hours, bool)
@@ -50,6 +59,7 @@ class Service(Entity):
         ):
             raise ValueError("Hours must be a positive number.")
 
+    def _validate_discount(self, discount):
         if (
             not isinstance(discount, (int, float))
             or isinstance(discount, bool)
@@ -58,9 +68,6 @@ class Service(Entity):
             or discount > 100
         ):
             raise ValueError("Discount must be between 0 and 100.")
-
-        total = self.calculate_cost(hours)
-        return total - (total * discount / 100)
 
     @abstractmethod
     def calculate_cost(self, hours):
@@ -76,23 +83,30 @@ class Service(Entity):
 
 
 class RoomReservationService(Service):
-    """Service for reserving rooms."""
+    """Service for renting rooms."""
 
     def __init__(self, name, base_price, capacity):
         super().__init__(name, base_price)
 
-        if not isinstance(capacity, int) or isinstance(capacity, bool) or capacity <= 0:
+        if (
+            not isinstance(capacity, int)
+            or isinstance(capacity, bool)
+            or capacity <= 0
+        ):
             raise ValueError("Room capacity must be a positive integer.")
 
         self.__capacity = capacity
-        self.validate_parameters()
+
+    def get_capacity(self):
+        return self.__capacity
 
     def calculate_cost(self, hours):
+        self._validate_hours(hours)
         return self.get_base_price() * hours
 
     def validate_parameters(self):
         if self.__capacity <= 0:
-            raise ValueError("Invalid room capacity.")
+            raise ValueError("Room capacity must be positive.")
 
         return True
 
@@ -107,32 +121,37 @@ class RoomReservationService(Service):
 class EquipmentRentalService(Service):
     """Service for renting equipment."""
 
-    def __init__(self, name, base_price, equipment_quantity):
+    def __init__(self, name, base_price, quantity):
         super().__init__(name, base_price)
 
         if (
-            not isinstance(equipment_quantity, int)
-            or isinstance(equipment_quantity, bool)
-            or equipment_quantity <= 0
+            not isinstance(quantity, int)
+            or isinstance(quantity, bool)
+            or quantity <= 0
         ):
-            raise ValueError("Equipment quantity must be a positive integer.")
+            raise ValueError(
+                "Equipment quantity must be a positive integer."
+            )
 
-        self.__equipment_quantity = equipment_quantity
-        self.validate_parameters()
+        self.__quantity = quantity
+
+    def get_quantity(self):
+        return self.__quantity
 
     def calculate_cost(self, hours):
+        self._validate_hours(hours)
         return self.get_base_price() * hours
 
     def validate_parameters(self):
-        if self.__equipment_quantity <= 0:
-            raise ValueError("Invalid equipment quantity.")
+        if self.__quantity <= 0:
+            raise ValueError("Equipment quantity must be positive.")
 
         return True
 
     def get_details(self):
         return (
             f"Equipment Rental: {self.get_name()} | "
-            f"Available Quantity: {self.__equipment_quantity} | "
+            f"Available Quantity: {self.__quantity} | "
             f"Hourly Rate: {self.get_base_price():.2f}"
         )
 
@@ -147,14 +166,17 @@ class SpecializedConsultingService(Service):
             raise ValueError("Consulting specialty cannot be empty.")
 
         self.__specialty = specialty.strip()
-        self.validate_parameters()
+
+    def get_specialty(self):
+        return self.__specialty
 
     def calculate_cost(self, hours):
+        self._validate_hours(hours)
         return self.get_base_price() * hours
 
     def validate_parameters(self):
         if not self.__specialty:
-            raise ValueError("Invalid consulting specialty.")
+            raise ValueError("Consulting specialty cannot be empty.")
 
         return True
 
